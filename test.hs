@@ -4,35 +4,40 @@ import Diagrams.Prelude
 import Diagrams.Backend.Gtk
 import Diagrams.Backend.Cairo
 import Control.Monad.Trans (liftIO)
+import Control.Concurrent.MVar
+import Walker
 
-renderFigure :: DrawingArea -> EventM EExpose Bool
-renderFigure canvas= do
-  liftIO $ defaultRender canvas figure
+type State = [P2]
+
+renderFigure :: MVar State -> DrawingArea -> EventM EExpose Bool
+renderFigure state canvas = do
+  s <- liftIO $ readMVar state
+  --liftIO $ putStrLn ("state" ++ (show s))
+  liftIO $ defaultRender canvas (figure s)
   return True
 
-figure :: Diagram Cairo R2
-figure =  circle 2
+figure :: State -> Diagram B R2
+figure state =  position (zip state (repeat dot))
+    where dot = circle 0.5 # fc green
 
-
-type State = [Int]
-
-update :: DrawingArea -> State -> IO Bool
+update :: DrawingArea -> MVar State -> IO Bool
 update canvas state = do
   putStrLn "updating"
-  -- TODO change state MVar here
+  modifyMVar_ state (\s -> return (if length s <= 5 then (p2 (fromIntegral $ length s,0)):s else s))
   widgetQueueDraw canvas
   return True
 
 main :: IO ()
 main = do
+  state <- newMVar [p2 (0,0)]
   initGUI
   window <- windowNew
   canvas <- drawingAreaNew
   canvas `on` sizeRequest $ return (Requisition 256 256)
-  canvas `on` exposeEvent $ renderFigure canvas
+  canvas `on` exposeEvent $ renderFigure state canvas
   set window [windowDefaultWidth := 600, windowDefaultHeight := 400,
               containerChild := canvas, containerBorderWidth := 8]
   onDestroy window mainQuit
   widgetShowAll window
-  timeoutAdd (update canvas [1..3]) 500
+  timeoutAdd (update canvas state) 500
   mainGUI
