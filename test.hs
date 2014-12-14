@@ -5,9 +5,10 @@ import Diagrams.Backend.Gtk
 import Diagrams.Backend.Cairo
 import Control.Monad.Trans (liftIO)
 import Control.Concurrent.MVar
+import System.Random
 import Walker
 
-type State = [P2]
+type State = ([P2],[Direction])
 
 renderFigure :: MVar State -> DrawingArea -> EventM EExpose Bool
 renderFigure state canvas = do
@@ -17,19 +18,19 @@ renderFigure state canvas = do
   return True
 
 figure :: State -> Diagram B R2
-figure state =  position (zip state (repeat dot))
-    where dot = circle 0.5 # fc green
+figure state =  (square 100) <> position (zip (fst state) (repeat dot))
+    where dot = circle 0.5 # fc green # lw none
 
 update :: DrawingArea -> MVar State -> IO Bool
 update canvas state = do
-  putStrLn "updating"
-  modifyMVar_ state (\s -> return (if length s <= 5 then (p2 (fromIntegral $ length s,0)):s else s))
+  modifyMVar_ state (\s -> return $ updateState s)
   widgetQueueDraw canvas
   return True
 
 main :: IO ()
 main = do
-  state <- newMVar [p2 (0,0)]
+  randomGen <- newStdGen
+  state <- newMVar ([p2 (0,0)], randoms randomGen)
   initGUI
   window <- windowNew
   canvas <- drawingAreaNew
@@ -39,5 +40,5 @@ main = do
               containerChild := canvas, containerBorderWidth := 8]
   onDestroy window mainQuit
   widgetShowAll window
-  timeoutAdd (update canvas state) 500
+  timeoutAdd (update canvas state) 50
   mainGUI
