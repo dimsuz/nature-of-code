@@ -1,7 +1,8 @@
 module Walker where
 import Prelude hiding (Left, Right)
 import System.Random
-import Diagrams.Prelude(P2,p2,translateX,translateY, (^&))
+import Diagrams.Prelude
+import Diagrams.Backend.Cairo
 
 type State = ([P2],[Float])
 
@@ -37,3 +38,7 @@ updateState :: State -> State
 updateState ([],(d:ds)) = ([(0 ^& 0)], ds)
 updateState (ap@(p:ps), (d:ds)) = (walk dir p : ap, ds)
                                   where dir = randToDir d
+
+drawState :: State -> Diagram B R2
+drawState state =  (square 100) <> position (zip (fst state) (repeat dot))
+    where dot = circle 0.5 # fc green # lw none

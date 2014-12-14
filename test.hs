@@ -1,33 +1,28 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 import Graphics.UI.Gtk
-import Diagrams.Prelude
 import Diagrams.Backend.Gtk
 import Diagrams.Backend.Cairo
 import Control.Monad.Trans (liftIO)
 import Control.Concurrent.MVar
-import System.Random
-import Walker
+-- import a particular module here which does init/update/draw implementations
+import Walker as M
 
 renderFigure :: MVar State -> DrawingArea -> EventM EExpose Bool
 renderFigure state canvas = do
   s <- liftIO $ readMVar state
   --liftIO $ putStrLn ("state" ++ (show s))
-  liftIO $ defaultRender canvas (figure s)
+  liftIO $ defaultRender canvas (M.drawState s)
   return True
-
-figure :: State -> Diagram B R2
-figure state =  (square 100) <> position (zip (fst state) (repeat dot))
-    where dot = circle 0.5 # fc green # lw none
 
 update :: DrawingArea -> MVar State -> IO Bool
 update canvas state = do
-  modifyMVar_ state (\s -> return $ updateState s)
+  modifyMVar_ state (\s -> return $ M.updateState s)
   widgetQueueDraw canvas
   return True
 
 main :: IO ()
 main = do
-  instate <- initState
+  instate <- M.initState
   stateVar <- newMVar instate
   initGUI
   window <- windowNew
