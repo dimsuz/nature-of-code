@@ -8,8 +8,6 @@ import Control.Concurrent.MVar
 import System.Random
 import Walker
 
-type State = ([P2],[Direction])
-
 renderFigure :: MVar State -> DrawingArea -> EventM EExpose Bool
 renderFigure state canvas = do
   s <- liftIO $ readMVar state
@@ -29,16 +27,16 @@ update canvas state = do
 
 main :: IO ()
 main = do
-  randomGen <- newStdGen
-  state <- newMVar ([p2 (0,0)], randoms randomGen)
+  instate <- initState
+  stateVar <- newMVar instate
   initGUI
   window <- windowNew
   canvas <- drawingAreaNew
   canvas `on` sizeRequest $ return (Requisition 256 256)
-  canvas `on` exposeEvent $ renderFigure state canvas
+  canvas `on` exposeEvent $ renderFigure stateVar canvas
   set window [windowDefaultWidth := 600, windowDefaultHeight := 400,
               containerChild := canvas, containerBorderWidth := 8]
   onDestroy window mainQuit
   widgetShowAll window
-  timeoutAdd (update canvas state) 50
+  timeoutAdd (update canvas stateVar) 50
   mainGUI

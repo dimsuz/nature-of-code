@@ -1,9 +1,9 @@
 module Walker where
 import Prelude hiding (Left, Right)
 import System.Random
-import Diagrams.Prelude(P2,translateX,translateY, (^&))
+import Diagrams.Prelude(P2,p2,translateX,translateY, (^&))
 
-type Walker = P2
+type State = ([P2],[Float])
 
 data Direction = Left | Right | Up | Down
                deriving (Show, Enum, Bounded)
@@ -21,6 +21,19 @@ walk d p = case d of
              Up -> translateY 1 p
              Down -> translateY (-1) p
 
-updateState :: ([P2],[Direction]) -> ([P2],[Direction])
+randToDir :: Float -> Direction
+randToDir n
+          | n < 0.4 = Right
+          | n < 0.6 = Left
+          | n < 0.8 = Down
+          | otherwise = Up
+
+initState :: IO State
+initState = do
+  randomGen <- newStdGen
+  return ([p2 (0,0)], randomRs (0.0,1.0) randomGen)
+
+updateState :: State -> State
 updateState ([],(d:ds)) = ([(0 ^& 0)], ds)
-updateState (ap@(p:ps), (d:ds)) = (walk d p : ap, ds)
+updateState (ap@(p:ps), (d:ds)) = (walk dir p : ap, ds)
+                                  where dir = randToDir d
