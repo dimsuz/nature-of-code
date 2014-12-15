@@ -40,7 +40,7 @@ walkStep (dx:dy:rs) p = (rs, nextPoint)
 
 walkRandomStep :: [Double] -> P2 -> ([Double], P2)
 walkRandomStep (rstep:r1:r2:rs) p = (rs, nextPoint)
-    where nextPoint = translate ((r1*stepsize) ^& (r2*stepsize)) p
+    where nextPoint = translate ((r1*2*stepsize-stepsize) ^& (r2*2*stepsize-stepsize)) p
           stepsize = rstep * 10
 
 initState :: IO State
