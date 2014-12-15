@@ -5,7 +5,7 @@ import Diagrams.Backend.Cairo
 import Control.Monad.Trans (liftIO)
 import Control.Concurrent.MVar
 -- import a particular module here which does init/update/draw implementations
-import Walker as M
+import PerlinWalker as M
 
 renderFigure :: MVar State -> DrawingArea -> EventM EExpose Bool
 renderFigure state canvas = do
