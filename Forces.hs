@@ -43,6 +43,14 @@ computeLocation :: World -> Mover -> Mover
 computeLocation world mover = Mover { location = loc, velocity = velocity mover, acceleration = acceleration mover }
     where loc = location mover + velocity mover
 
+bounceOffWalls :: World -> Mover -> Mover
+bounceOffWalls (World _ _ (szx, szy) _) mover@(Mover (x,y) _ _ )
+               | x > szx / 2 = mover { location = (szx / 2, y), velocity = -1 `mulSV` (velocity mover) }
+               | x < (- szx) / 2 = mover { location = ((-szx) / 2, y), velocity = -1 `mulSV` (velocity mover) }
+               | y > szy / 2 = mover { location = (x, szy / 2), velocity = -1 `mulSV` (velocity mover) }
+               | y < (-szy) / 2 = mover { location = (x, (-szy) / 2), velocity = -1 `mulSV` (velocity mover) }
+               | otherwise = mover
+
 update :: Float -> World -> World
 update time world@(World m mousePos sz dbg) = World {
                                                    mover = newMover,
@@ -55,7 +63,9 @@ update time world@(World m mousePos sz dbg) = World {
                            transforms = reverse
                                         [ computeAcceleration,
                                           computeVelocity,
-                                          computeLocation ]
+                                          computeLocation,
+                                          bounceOffWalls
+                                        ]
 
 event :: Event -> World -> World
 event e world = case e of
