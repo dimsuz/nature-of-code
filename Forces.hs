@@ -6,7 +6,8 @@ type MousePosition = Vector
 
 data Mover = Mover { location :: Vector,
                      velocity :: Vector,
-                     acceleration :: Vector
+                     acceleration :: Vector,
+                     mass :: Float
                    }
 
 data World = World { mover :: Mover, mousePosition:: MousePosition, size :: Vector, debug :: String }
@@ -26,30 +27,31 @@ draw world = Pictures [
               drawCircle 20 $ location (mover world)
              ]
 
-computeAcceleration :: World -> Mover ->  Mover
-computeAcceleration world mover =  Mover { location = location mover, velocity = velocity mover, acceleration = acc }
-    where acc = (normalizeV' direction) `mult` 0.5
-          mousePos = mousePosition world
-          loc = location mover
-          direction = mousePos - loc
-          mult = flip mulSV
-
 computeVelocity :: World -> Mover -> Mover
-computeVelocity world mover =  Mover { location = location mover, velocity = vel, acceleration = acceleration mover }
+computeVelocity world mover =  mover { velocity = vel }
     where vel = limitV vel' 10
           vel' = velocity mover + acceleration mover
 
 computeLocation :: World -> Mover -> Mover
-computeLocation world mover = Mover { location = loc, velocity = velocity mover, acceleration = acceleration mover }
+computeLocation world mover = mover { location = loc }
     where loc = location mover + velocity mover
 
 bounceOffWalls :: World -> Mover -> Mover
-bounceOffWalls (World _ _ (szx, szy) _) mover@(Mover (x,y) _ _ )
-               | x > szx / 2 = mover { location = (szx / 2, y), velocity = -1 `mulSV` (velocity mover) }
-               | x < (- szx) / 2 = mover { location = ((-szx) / 2, y), velocity = -1 `mulSV` (velocity mover) }
-               | y > szy / 2 = mover { location = (x, szy / 2), velocity = -1 `mulSV` (velocity mover) }
-               | y < (-szy) / 2 = mover { location = (x, (-szy) / 2), velocity = -1 `mulSV` (velocity mover) }
+bounceOffWalls (World _ _ (szx, szy) _) mover@(Mover (x,y) _ _ _)
+               | x > szx / 2 = mover { location = (szx / 2, y), velocity = (velocity mover) * (-1, 1) }
+               | x < (- szx) / 2 = mover { location = ((-szx) / 2, y), velocity = (velocity mover) * (-1, 1)}
+               | y > szy / 2 = mover { location = (x, szy / 2), velocity = (velocity mover) * (1, -1) }
+               | y < (-szy) / 2 = mover { location = (x, (-szy) / 2), velocity = (velocity mover) * (1, -1)}
                | otherwise = mover
+
+resetForces :: World -> Mover -> Mover
+resetForces world mover = mover { acceleration = (0,0) }
+
+type Force = Vector
+applyForce :: Force -> World -> Mover -> Mover
+applyForce force world mover = mover { acceleration = acc }
+                               where acc = (acceleration mover) + mulSV (1/m) force
+                                     m = mass mover
 
 update :: Float -> World -> World
 update time world@(World m mousePos sz dbg) = World {
@@ -61,10 +63,13 @@ update time world@(World m mousePos sz dbg) = World {
                      where transition = foldr (.) id curried
                            curried = map ($ world) transforms
                            transforms = reverse
-                                        [ computeAcceleration,
+                                        [
+                                          applyForce (0.01, 0),
+                                          applyForce (0.0, -1.0),
                                           computeVelocity,
                                           computeLocation,
-                                          bounceOffWalls
+                                          bounceOffWalls,
+                                          resetForces
                                         ]
 
 event :: Event -> World -> World
@@ -77,7 +82,7 @@ main
         white
         100
         World {
-     mover = Mover { location = (0, 0), velocity = (0,0), acceleration = (0.0,0.0)},
+     mover = Mover { location = (0, 0), velocity = (0,0), acceleration = (0.0,0.0), mass = 10.0 },
      mousePosition = (0,0), debug = "hello", size = (800, 600)
         }
         draw
