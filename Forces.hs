@@ -9,7 +9,7 @@ data Mover = Mover { location :: Vector,
                      acceleration :: Vector
                    }
 
-data World = World { mover :: Mover, mousePosition:: MousePosition, debug :: String }
+data World = World { mover :: Mover, mousePosition:: MousePosition, size :: Vector, debug :: String }
 
 normalizeV' (0,0) = (0,0)
 normalizeV' v = normalizeV v
@@ -44,10 +44,11 @@ computeLocation world mover = Mover { location = loc, velocity = velocity mover,
     where loc = location mover + velocity mover
 
 update :: Float -> World -> World
-update time world@(World m mousePos debug) = World {
+update time world@(World m mousePos sz dbg) = World {
                                                    mover = newMover,
                                                    mousePosition = mousePos,
-                                                   debug = debug }
+                                                   size = sz,
+                                                   debug = dbg }
     where newMover = transition m
                      where transition = foldr (.) id curried
                            curried = map ($ world) transforms
@@ -58,7 +59,7 @@ update time world@(World m mousePos debug) = World {
 
 event :: Event -> World -> World
 event e world = case e of
-                  EventMotion v -> World (mover world) v (show e)
+                  EventMotion v -> World (mover world) v (size world) (show e)
                   otherwise -> world
 
 main
@@ -67,7 +68,7 @@ main
         100
         World {
      mover = Mover { location = (0, 0), velocity = (0,0), acceleration = (0.0,0.0)},
-     mousePosition = (0,0), debug = "hello"
+     mousePosition = (0,0), debug = "hello", size = (800, 600)
         }
         draw
         event
