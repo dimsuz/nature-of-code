@@ -1,3 +1,5 @@
+module Forces (main') where
+
 import Graphics.Gloss.Interface.Pure.Game
 import Graphics.Gloss.Data.Vector
 import Graphics.Gloss
@@ -85,7 +87,7 @@ event _ world = world
 
 mkMover m = Mover { location = (-400 + m*10, 0), velocity = (0,0), acceleration = (0.0,0.0), mass = m }
 
-main = do
+main' = do
    stdGen <- getStdGen
    play (InWindow "GameEvent" (800, 600) (10, 10))
         white
